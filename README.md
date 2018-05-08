@@ -42,4 +42,5 @@ If provided directory doesn't exist, script will create it.
 If not, trainer tries load checkpoint from there, but if fails,
 will start whole training from the begining (just run global initializer.)
 
+If you provide wrong MNIST path, TensorFlow will download it.
 

@@ -30,13 +30,9 @@ import datetime
 #   3. All poolngs are of type MAX with 2x2 spacial dimesnions and the same stride
 
 LAYERS_CONF = [
-    ('c', 16, tf.nn.relu),
+    ('c', 32, tf.nn.relu),
     ('p', None , None),
-    ('c', 32, tf.nn.relu),
-    ('p', None, None),
-    ('c', 32, tf.nn.relu),
-    ('p', None, None),
-    ('c', 32, tf.nn.relu),
+    ('c', 64, tf.nn.relu),
     ('p', None, None),
     ('f', 1024, tf.nn.relu),
     ('f', 10, None)
@@ -170,7 +166,7 @@ class MnistTrainer(object):
                     tf.float32
                 )
             )
-        self.train_step = tf.train.MomentumOptimizer(0.05, momentum=0.9).minimize(self.loss)
+        self.train_step = tf.train.MomentumOptimizer(0.02, momentum=0.9).minimize(self.loss)
         print('list of variables:')
         for name, shape in map(lambda x: (x.name, x.shape), tf.global_variables()):
             print(name, shape)
@@ -208,7 +204,7 @@ class MnistTrainer(object):
                 for batch_idx in range(batches_n):
                     batch_xs, batch_ys = mnist.train.next_batch(mb_size)
                     self.train_on_batch(batch_xs, batch_ys)
-                    if batch_idx % 100 == 0:
+                    if batch_idx % 50 == 0:
                         loss, acc =  self.sess.run([self.loss, self.accuracy],
                                 feed_dict={self.x: mnist.test.images,
                                     self.y_target: mnist.test.labels})
