@@ -198,7 +198,7 @@ class MnistTrainer(object):
                 try:
                     saver.restore(self.sess, self.ckpt_path)
                 except:
-                    tf.global_variables_initializer().run()  # initialize variables
+                    tf.global_variables_initializer().run()
             else:
                 tf.global_variables_initializer().run()  # initialize variables
             batches_n = 100000

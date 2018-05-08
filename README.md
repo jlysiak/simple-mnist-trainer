@@ -23,6 +23,7 @@ convolutional layers.
 If you want to modify layers of neural network, edit `LAYERS_CONF` list at  
 the begining of `mnist.py`.  
 
+
 `mnist.py` script requires some flags.  
 To see description run `python3.5 mnist.py -h` but, in short:  
 
@@ -34,5 +35,11 @@ Extra flags:
   * `-c CKPT_DIR` - save/load checkpoint from here
   * `-l LOG_FILE` - save some train logs here
   * `-i IMGS_DIR` - save images here
+
+#### NOTE 
+If `-c` flat is not provided, checkpoints are saved in `/tmp` directory.  
+If provided directory doesn't exist, script will create it.
+If not, trainer tries load checkpoint from there, but if fails,
+will start whole training from the begining (just run global initializer.)
 
 
