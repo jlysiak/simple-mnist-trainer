@@ -155,7 +155,7 @@ class MnistTrainer(object):
             last = ident, arg, act_fn
 
         self.loss = tf.reduce_mean(
-                tf.nn.sigmoid_cross_entropy_with_logits(
+                tf.nn.softmax_cross_entropy_with_logits(
                     logits=signal, 
                     labels=self.y_target))
         self.accuracy = tf.reduce_mean(
@@ -248,41 +248,67 @@ class MnistTrainer(object):
                                 feed_dict={self.x: img_xs, self.y_target: img_ys})
                 outs =  self.sess.run(self.conv_layers,
                                 feed_dict={self.x: img_xs, self.y_target: img_ys})
+                # iterate over layers
                 for cidx, el in enumerate(outs):
-                    ch_sz = el.shape[-1]
-                    rows = ch_sz // 8
-                    cols = 8
+                    ch_sz = el.shape[-1] # number of channels 
+                    
+                    rows = ch_sz # row per channel
+                    cols = 10    # top 10 patches
+
                     plt.close('all')
                     fig, ax = plt.subplots(cols, rows, sharex=True, sharey=True)
                     fn = self.funs[cidx]
+
+                    print(ch_sz)
+                    chs_tops = []
+                    # Iterate over channels
                     for ch_idx in range(ch_sz):
+                        chs = []
                         ch_max = 0
                         ch_max_xy = None, None
                         ch_max_wnd = None
+
+                        # Iterate over INPUT images
                         for img_idx in range(imgs_n):
                             img = np.reshape(img_xs[img_idx], (28,28))
                             e = el[img_idx]
                             f = e[:,:,ch_idx]
                             idx = np.unravel_index(np.argmax(f), f.shape)
                             v = f[idx]
-                            if v > ch_max:
+
+                            if False:
                                 ch_max = v
                                 ch_max_xy = idx
                                 x, y = idx
                                 x1, x2, y1, y2 = fn((x, x+1, y, y + 1))
                                 l = [np.clip(k, 0, 28) for k in [ x1, x2, y1, y2]]
                                 ch_max_wnd = img[l[0]:l[1], l[2]:l[3]]
-                        print("Channel: %d" % ch_idx, ch_max, ch_max_xy) 
-                        fx = ch_idx % cols
-                        fy = ch_idx // cols
-                        ax[fx, fy].matshow(ch_max_wnd, cmap='gray')
-                        ax[fx, fy].tick_params(axis='x', which='both', 
-                                bottom=False, top=False, 
-                                labelbottom=False, labeltop=False)
-                        ax[fx, fy].tick_params(axis='y', left=False, 
-                                right=False, labelleft=False, labelright=False)
-                    fig.savefig(os.path.join(self.imgs_path, 
-                        "img-%d.png" % (cidx)))
+                            
+                            _x, _y = idx
+                            _x1, _x2, _y1, _y2 = fn((_x, _x+1, _y, _y + 1))
+                            _l = [np.clip(k, 0, 28) for k in [ _x1, _x2, _y1, _y2]]
+                            chs.append((v, img[_l[0]:_l[1], _l[2]:_l[3]]))
+
+                        chs.sort(key=lambda x: x[0])
+                        chs = chs[-10:]
+                        chs_tops.append(chs)
+
+                    # TOP10 generated
+                    plt.close('all')
+                    fig, ax = plt.subplots(rows, cols, sharex=True, sharey=True,
+                            figsize=(11, len(chs_tops)))
+                    for rid, tops in enumerate(chs_tops):
+                        for cid, top in enumerate(tops):
+                            v, wnd = top
+                            ax[rid, cid].matshow(wnd, cmap='gray')
+                            ax[rid, cid].tick_params(axis='x', which='both', 
+                                    bottom=False, top=False, 
+                                    labelbottom=False, labeltop=False)
+                            ax[rid, cid].tick_params(axis='y', left=False, 
+                                    right=False, labelleft=False, labelright=False)
+                            print(rid, cid, v)
+                    plt.tight_layout()
+                    fig.savefig(os.path.join(self.imgs_path, "filters-%d.png" % cidx))
             except KeyboardInterrupt:
                 print('Stopped!')
 
