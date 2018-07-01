@@ -14,6 +14,7 @@ import argparse
 import matplotlib.pyplot as plt 
 import shutil
 import datetime
+import time
 
 # =============================================================================
 # ================ MNIST DEEEEP NEURAL NETWORK CONFIGURATION ==================
@@ -179,8 +180,9 @@ class MnistTrainer(object):
         self.sess.run([self.train_step],
                                 feed_dict={self.x: batch_xs, self.y_target: batch_ys})
 
-    def train(self):
-        self.create_convnet()
+    def train(self, device):
+        with tf.device(device):
+            self.create_convnet()
         mnist = input_data.read_data_sets(self.mnist_path, one_hot=True)
         results = []
         saver = tf.train.Saver()
@@ -200,19 +202,27 @@ class MnistTrainer(object):
             batches_n = 100000
             mb_size = 128
             losses = []
+            tbatches, ttime = 0, 0
             try:
                 for batch_idx in range(batches_n):
+                    last = time.time()
                     batch_xs, batch_ys = mnist.train.next_batch(mb_size)
                     self.train_on_batch(batch_xs, batch_ys)
+                    ttime += time.time() - last
+                    tbatches += 1
                     if batch_idx % 50 == 0:
                         loss, acc =  self.sess.run([self.loss, self.accuracy],
-                                feed_dict={self.x: mnist.test.images,
-                                    self.y_target: mnist.test.labels})
+                                feed_dict={self.x: mnist.test.images[:1000],
+                                    self.y_target: mnist.test.labels[:1000]})
                         print("Batches passed: {:5} Loss: {:10} Acc: {:10}".format(batch_idx, loss, acc))
                         results.append((batch_idx, loss, acc))
 
             except KeyboardInterrupt:
                 print('Stopping training!')
+            with open("logs.log", "a") as flog:
+                string = "{}: batches: {} time: {} -> per batch: {} per example: {}\n".format(device, tbatches, ttime, ttime / tbatches, ttime / tbatches / mb_size)
+                print(string)
+                flog.write(string)
 
             print("Model saved as"  + saver.save(self.sess, self.ckpt_path)) 
             if self.log_path is not None:
@@ -322,12 +332,16 @@ if __name__ == '__main__':
     args.add_argument("-t", "--train", help="Run training", action="store_true")
     args.add_argument("-l", "--log", help="Log file path")
     args.add_argument("-v", "--visualize", help="Visualize filters", action="store_true")
+    args.add_argument("--gpu", help="Allocate network on GPU", action="store_true")
 
     FLAGS, unknown = args.parse_known_args()
     if FLAGS.train:
         trainer = MnistTrainer(LAYERS_CONF, FLAGS.mnist, 
                 FLAGS.checkpoint, FLAGS.imgs, FLAGS.log)
-        trainer.train()
+        device="/cpu:0"
+        if FLAGS.gpu:
+            device = "/gpu:0"
+        trainer.train(device=device)
     elif FLAGS.visualize:
         trainer = MnistTrainer(LAYERS_CONF, FLAGS.mnist, 
                 FLAGS.checkpoint, FLAGS.imgs, FLAGS.log)
