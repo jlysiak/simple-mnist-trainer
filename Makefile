@@ -9,10 +9,10 @@ requirements:
 	pip install -r requirements.txt
 
 train:
-	python3.5 mnist.py -M $(DS) -l $(LOG) -c $(MODEL) -t
+	python3 mnist.py -M $(DS) -l $(LOG) -c $(MODEL) -t
 
 images:
-	python3.5 mnist.py -m $(DS) -i $(IMGS) -c $(MODEL) -v
+	python3 mnist.py -m $(DS) -i $(IMGS) -c $(MODEL) -v
 
 clean:
 	rm -fr $(MODEL) $(IMGS) $(LOG)
